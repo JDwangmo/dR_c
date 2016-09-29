@@ -1,5 +1,6 @@
 /**************************************************************
 * Created by jdwang on 2016-09-15.
+* Last updated on 2016-09-29
 * DESCRIPTION : 
 ****************************************************************/
 
@@ -254,7 +255,8 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
         for (col = 0; col < model->model_all.FC1.inputNum; col++) {
             sum += merge_output[col] * FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
         }
-        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
+//        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
+        fc1_output[row] = sum + FC1_B_Weight[row];
     }
     //endregion
 

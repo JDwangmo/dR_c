@@ -106,7 +106,6 @@ typedef struct {
 typedef struct {
     INT32U number_of_image;          //图像的数量
     IplImage * imageList;            //图像数组首地址
-	INT8U * labelList;               //图像的标签首地址
 }ImageArray;
 
 

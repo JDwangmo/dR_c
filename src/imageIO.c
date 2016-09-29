@@ -1,12 +1,40 @@
 /**************************************************************
 * Created by jdwang on 2016-09-15.
+* Last updated on 2016-09-29
 * DESCRIPTION : 
 ****************************************************************/
 
 #include <typedef.h>
 #include "imageIO.h"
-#include "stdio.h"
 #include "config.h"
+
+INT8U * ReadLabelFromFile(const char *file_name){
+    FILE * fp;
+    INT32U number_of_image;
+    INT32U image_index,pixel_index;
+    INT8U * labelList;
+
+    #if DEBUG_LEVEL>0
+        printf("----------------\n");
+        printf("打开文件（label）：%s\n",file_name);
+    #endif
+    fp = fopen(file_name,"rb");
+    if(fp==NULL){
+        printf("open image failed!(%s)\n",file_name);
+    }
+    //    图片的数量
+    fread(&number_of_image,sizeof(INT32U),1,fp);
+    #if DEBUG_LEVEL>0
+        printf("----------------\n");
+        printf("number of labels : %d",number_of_image);
+    #endif
+
+    labelList = malloc(sizeof(INT8U)*number_of_image);
+//    for(image_index=0;image_index<number_of_image;image_index++){
+    fread(labelList,sizeof(INT8U),number_of_image,fp);
+//    assert(NULL);
+    return labelList;
+}
 
 ImageArray ReadImageFromFile(const char *file_name){
 
