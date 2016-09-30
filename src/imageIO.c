@@ -26,7 +26,7 @@ INT8U * ReadLabelFromFile(const char *file_name){
     fread(&number_of_image,sizeof(INT32U),1,fp);
     #if DEBUG_LEVEL>0
         printf("----------------\n");
-        printf("number of labels : %d",number_of_image);
+        printf("number of labels : %d\n",number_of_image);
     #endif
 
     labelList = malloc(sizeof(INT8U)*number_of_image);

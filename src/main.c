@@ -28,6 +28,7 @@ int main() {
     label_array = ReadLabelFromFile(labels_file_name);
 
     for(image_index=0;image_index<image_array.number_of_image;image_index++){
+//        image_index=770;
         y_pred = RecognizeSCAU(&image_array.imageList[image_index],0,0);
 
         #if DEBUG_LEVEL>0
@@ -38,6 +39,7 @@ int main() {
             );
         #endif
         correct_count += (y_pred==Index_To_Char[label_array[image_index]]);
+//        assert(NULL);
     }
     #if DEBUG_LEVEL>0
         printf("测试完成！");

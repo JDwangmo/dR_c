@@ -57,7 +57,9 @@ void CNNModelInit(CharCNNClassifier *model){
     model->model_all.FC2.outputNum = 34;
 }
 
-
+float TanhApproximateFunction(float x){
+    return (exp2f(x)-exp2f(-x))/(exp2f(x)+exp2f(-x));
+}
 
 CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
     int row, col, i, j, k;
@@ -256,10 +258,24 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
             sum += merge_output[col] * FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
         }
 //        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
-        fc1_output[row] = sum + FC1_B_Weight[row];
+        fc1_output[row] = TanhApproximateFunction(sum + FC1_B_Weight[row]);
+//        fc1_output[row] = sum + FC1_B_Weight[row];
     }
     //endregion
 
+//    for (col = 0; col < model->model_all.FC2.inputNum; col++) {
+//        printf("%f,",fc1_output[col]);
+//    }
+//    printf("\n");
+//
+//    for (col = 0; col < model->model_all.FC2.inputNum; col++) {
+//        printf("%f,",FC2_Map_Weight[7*model->model_all.FC2.inputNum+col]);
+//    }
+//    printf("\n");
+//    for (col = 0; col < model->model_all.FC2.inputNum; col++) {
+//        printf("%f,",FC2_Map_Weight[33*model->model_all.FC2.inputNum+col]);
+//    }
+//    printf("\n");
     //region FC2 - 400*34
     max = -10000;
     k=0;
@@ -269,6 +285,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
             sum += fc1_output[col] * FC2_Map_Weight[row * model->model_all.FC2.inputNum + col];
         }
         value = sum + FC2_B_Weight[row];
+//        printf("%f,",value);
         if(value>max){
             max =value;
             k=row;
