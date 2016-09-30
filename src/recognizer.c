@@ -7,14 +7,14 @@
 ****************************************************************/
 
 #include <recognizer.h>
-#include <config.h>
-#include <cnn.h>
-#include "math.h"
+#include "sys/time.h"
+
+static CharCNNClassifier Char_Model;
 
 
 //模型初始化配置
-void Model_Init(CharCNNClassifier *model) {
-    CNNModelInit(model);
+void Model_Init() {
+    CNNModelInit(&Char_Model);
 }
 
 
@@ -26,15 +26,16 @@ CHAR Predict(CharCNNClassifier *model, IplImage *pImage) {
 CHAR RecognizeSCAU(IplImage *pImage, int version, int location) {
 
     CHAR y_pred;
+    struct timeval start;
 
     #if DEBUG_LEVEL>5
         printmat(pImage);
     #endif
 
-    CharCNNClassifier model;
-    Model_Init(&model);
+    if (Char_Model.init==0)
+        Model_Init();
 
-    y_pred = Predict(&model, pImage);
+    y_pred = Predict(&Char_Model, pImage);
 
     return y_pred;
 }

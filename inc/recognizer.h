@@ -15,7 +15,7 @@
 
 CHAR RecognizeSCAU(IplImage *pImage, int version,int location);
 //模型初始化
-void Model_Init(CharCNNClassifier * model);
+void Model_Init();
 //识别，返回预测结果
 CHAR Predict(CharCNNClassifier * model,IplImage *pImage);
 

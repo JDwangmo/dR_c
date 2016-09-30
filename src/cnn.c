@@ -4,12 +4,14 @@
 * DESCRIPTION : 
 ****************************************************************/
 
+#include <cnn.h>
 #include "cnn.h"
 
 
 //CNN model init
 void CNNModelInit(CharCNNClassifier *model){
 //    1's layer - input layer : 25*25
+    model->init=1;
     model->model_all.inputHeight = 15;
     model->model_all.inputWidthStep = 15;
 //    2's layer - convolution Layer 1 : 25*1*3*3
@@ -57,16 +59,27 @@ void CNNModelInit(CharCNNClassifier *model){
     model->model_all.FC2.outputNum = 34;
 }
 
-float TanhApproximateFunction(float x){
-    return (exp2f(x)-exp2f(-x))/(exp2f(x)+exp2f(-x));
+int TanhApproximateFunction(int x){
+    /*
+     * tanh x=sinh x / cosh x
+     * 其中sinh x=(e^(x)-e^(-x))/2 ，cosh x=(e^x+e^(-x))/2
+     * 所以tanhx = (e^(x)-e^(-x)) /(e^x+e^(-x))
+     * */
+//    return (int)(tanh(x));
+    if (x> 10)
+        return 1;
+    else if(x<-10)
+        return -1;
+    else
+        return (int)((exp(x)-exp(-x))/(exp(x)+exp(-x)));
 }
 
 CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
     int row, col, i, j, k;
     INT8U output_row, output_col;
     int map_index_position, image_index_position;
-    float sum, max, value;
-    float c11_output[25 * 13 * 13], c21_output[25 * 11 * 11], c31_output[25 * 9 * 9],fc1_output[model->model_all.FC1.outputNum];
+    int sum, max, value;
+    int c11_output[25 * 13 * 13], c21_output[25 * 11 * 11], c31_output[25 * 9 * 9],fc1_output[model->model_all.FC1.outputNum];
     char index_to_char[]={'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L',
                           'M','N','P','Q','R','S','T','U','W','X','Y','Z'};
     /*,fc2_output[model->model_all.FC2.outputNum]*/
@@ -86,7 +99,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
             //        i represents start point in row
             for (j = 0; j < output_col; j++) {
                 //        j represents start point in col
-                sum = 0.0;
+                sum = 0;
                 for (row = 0; row < model->model_all.C11.height; row++) {
                     for (col = 0; col < model->model_all.C11.widthStep; col++) {
                         //      index position
@@ -97,7 +110,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
                         sum += C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position];
                     }
                 }
-                c11_output[k * output_row * output_row + i * output_row + j] = tanhf(sum + C11_B_Weight[k]);
+                c11_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(sum + C11_B_Weight[k]);
             }
         }
 //                printmat(pImage);
@@ -106,6 +119,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
 //                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
 //        assert(NULL);
     }
+
     output_row = 6;
     output_col = 6;
     for (k = 0; k < model->model_all.C11.outChannels; k++) {
@@ -146,7 +160,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
             //        i represents start point in row
             for (j = 0; j < output_col; j++) {
                 //        j represents start point in col
-                sum = 0.0;
+                sum = 0;
                 for (row = 0; row < model->model_all.C21.height; row++) {
                     for (col = 0; col < model->model_all.C21.widthStep; col++) {
                         //      index position
@@ -158,7 +172,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
                     }
                 }
 //                11*11
-                c21_output[k * output_row * output_row + i * output_row + j] = tanhf(sum + C21_B_Weight[k]);
+                c21_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(sum + C21_B_Weight[k]);
             }
         }
 //        printmat2(c21_output, output_row, output_row);
@@ -205,7 +219,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
             //        i represents start point in row
             for (j = 0; j < output_col; j++) {
                 //        j represents start point in col
-                sum = 0.0;
+                sum = 0;
                 for (row = 0; row < model->model_all.C31.height; row++) {
                     for (col = 0; col < model->model_all.C31.widthStep; col++) {
                         //      index position
@@ -213,11 +227,11 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
                         image_index_position = (i + row) * pImage->widthStep + (j + col);
 //                        printf("%d,%d\n", map_index_position, image_index_position);
 //                        printf("%f,%d\n", C11_Map_Weight[map_index_position], pImage->imageData[image_index_position]);
-                        sum += C31_Map_Weight[map_index_position] * pImage->imageData[image_index_position];
+                        sum += C31_Map_Weight[map_index_position]* pImage->imageData[image_index_position];
                     }
                 }
 //                9*9
-                c31_output[k * output_row * output_row + i * output_row + j] = tanhf(sum + C31_B_Weight[k]);
+                c31_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(sum + C31_B_Weight[k]);
             }
         }
 //        printmat2(c31_output, output_row, output_row);
@@ -253,7 +267,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
 
     //region FC1 - 1925*400
     for (row = 0; row < model->model_all.FC1.outputNum; row++) {
-        sum = 0.0;
+        sum = 0;
         for (col = 0; col < model->model_all.FC1.inputNum; col++) {
             sum += merge_output[col] * FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
         }
@@ -280,7 +294,7 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
     max = -10000;
     k=0;
     for (row = 0; row < model->model_all.FC2.outputNum; row++) {
-        sum = 0.0;
+        sum = 0;
         for (col = 0; col < model->model_all.FC2.inputNum; col++) {
             sum += fc1_output[col] * FC2_Map_Weight[row * model->model_all.FC2.inputNum + col];
         }

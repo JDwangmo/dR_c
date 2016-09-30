@@ -68,6 +68,8 @@ typedef struct {
 //数字识别混合CNN模型
 typedef struct {
 //    34分类器
+//    标志位,是否初始化过
+    BOOL init;
     CNN model_all;
 
 //    2分类 0D

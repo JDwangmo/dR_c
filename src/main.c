@@ -8,7 +8,7 @@
 #include <config.h>
 #include "imageIO.h"
 #include "recognizer.h"
-#include "stdio.h"
+#include "sys/time.h"
 char Index_To_Char[]={'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L',
                       'M','N','P','Q','R','S','T','U','W','X','Y','Z'};
 int main() {
@@ -17,6 +17,7 @@ int main() {
     ImageArray image_array;
     INT32U image_index,correct_count=0;
     CHAR y_pred;
+    struct timeval start,end;
 
     #if DEBUG_LEVEL>0
         printf("开始测试！");
@@ -26,9 +27,11 @@ int main() {
     labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_data1.mat";
     image_array = ReadImageFromFile(images_file_name);
     label_array = ReadLabelFromFile(labels_file_name);
-
+    gettimeofday(&start, 0);
     for(image_index=0;image_index<image_array.number_of_image;image_index++){
 //        image_index=770;
+//        printmat(&image_array.imageList[image_index]);
+
         y_pred = RecognizeSCAU(&image_array.imageList[image_index],0,0);
 
         #if DEBUG_LEVEL>0
@@ -43,6 +46,8 @@ int main() {
     }
     #if DEBUG_LEVEL>0
         printf("测试完成！");
+        gettimeofday(&end, 0);
+        printf("用时：%dms\n", (int) ((end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000));
         printf("正确个数：%d,准确率：%f",correct_count,(correct_count*1.0)/image_array.number_of_image);
     #endif
     return 0;
