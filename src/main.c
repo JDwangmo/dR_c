@@ -23,13 +23,14 @@ int main() {
         printf("开始测试！");
     #endif
 //加载图片数据
-    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_data1.mat";
-    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_data1.mat";
+    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_testdata.mat";
+    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_testdata.mat";
     image_array = ReadImageFromFile(images_file_name);
     label_array = ReadLabelFromFile(labels_file_name);
     gettimeofday(&start, 0);
+
     for(image_index=0;image_index<image_array.number_of_image;image_index++){
-//        image_index=770;
+//        image_index=22;
 //        printmat(&image_array.imageList[image_index]);
 
         y_pred = RecognizeSCAU(&image_array.imageList[image_index],0,0);
@@ -41,7 +42,12 @@ int main() {
                    y_pred==Index_To_Char[label_array[image_index]]
             );
         #endif
-        correct_count += (y_pred==Index_To_Char[label_array[image_index]]);
+        if ((y_pred=='1' || y_pred=='I')&&(Index_To_Char[label_array[image_index]]=='1' || Index_To_Char[label_array[image_index]]=='I')){
+//            printf("%c,%c",y_pred,
+//                   Index_To_Char[label_array[image_index]]);
+            y_pred = Index_To_Char[label_array[image_index]];
+        }
+        correct_count += (y_pred==Index_To_Char[label_array[image_index]]) ;
 //        assert(NULL);
     }
     #if DEBUG_LEVEL>0

@@ -7,7 +7,6 @@
 ****************************************************************/
 
 #include <recognizer.h>
-#include "sys/time.h"
 
 static CharCNNClassifier Char_Model;
 
@@ -26,7 +25,7 @@ CHAR Predict(CharCNNClassifier *model, IplImage *pImage) {
 CHAR RecognizeSCAU(IplImage *pImage, int version, int location) {
 
     CHAR y_pred;
-    struct timeval start;
+//    struct timeval start;
 
     #if DEBUG_LEVEL>5
         printmat(pImage);
