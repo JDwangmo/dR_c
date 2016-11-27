@@ -16,6 +16,7 @@
 #define Sigmoid 1
 #define Linear 2
 
+
 // 卷积层
 typedef struct {
     // 关于特征模板的权重分布，这里是一个四维数组
@@ -72,18 +73,18 @@ typedef struct {
     BOOL init;
     CNN model_all;
 
-//    2分类 0D
-//    CNN* model_binary_0D;
+//    3分类 0DQ
+    CNN model_binary_0DQ;
 //    2分类 1I
 //    CNN* model_binary_1I;
 //    2分类 2Z
 //    CNN* model_binary_2Z;
 //    2分类 56
-//    CNN* model_binary_56;
+    CNN model_binary_56;
 //    2分类 4A
 //    CNN* model_binary_4A;
 //    2分类 8B
-//    CNN* model_binary_8B;
+    CNN model_binary_8B;
 } CharCNNClassifier;
 
 
@@ -91,5 +92,11 @@ typedef struct {
 void CNNModelInit(CharCNNClassifier *model);
 
 CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage);
+
+CHAR CNNModelPredictBinary56(CharCNNClassifier *model, IplImage *pImage) ;
+
+CHAR CNNModelPredictBinary8B(CharCNNClassifier *model, IplImage *pImage);
+
+CHAR CNNModelPredictBinary0DQ(CharCNNClassifier *model, IplImage *pImage) ;
 
 #endif

@@ -30,7 +30,7 @@ int main() {
     gettimeofday(&start, 0);
 
     for(image_index=0;image_index<image_array.number_of_image;image_index++){
-//        image_index=22;
+//        image_index=37053;
 //        printmat(&image_array.imageList[image_index]);
 
         y_pred = RecognizeSCAU(&image_array.imageList[image_index],0,0);

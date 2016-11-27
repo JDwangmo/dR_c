@@ -13,6 +13,7 @@
 
 
 
+
 CHAR RecognizeSCAU(IplImage *pImage, int version,int location);
 //模型初始化
 void Model_Init();

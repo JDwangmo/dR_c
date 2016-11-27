@@ -25,5 +25,21 @@
 #include "binary56_fc2_weight.h"
 #include "binary56_fc2_b.h"
 
+//二分类8-B权重
+#include "binary8B_conv_weight33.h"
+#include "binary8B_conv_b33.h"
+#include "binary8B_fc1_weight.h"
+#include "binary8B_fc1_b.h"
+#include "binary8B_fc2_weight.h"
+#include "binary8B_fc2_b.h"
+
+//3分类0-D-Q权重
+#include "binary0DQ_conv_weight33.h"
+#include "binary0DQ_conv_b33.h"
+#include "binary0DQ_fc1_weight.h"
+#include "binary0DQ_fc1_b.h"
+#include "binary0DQ_fc2_weight.h"
+#include "binary0DQ_fc2_b.h"
+
 
 #endif //DR_C_WEIGHT_H
