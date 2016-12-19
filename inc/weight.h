@@ -42,4 +42,44 @@
 #include "binary0DQ_fc2_b.h"
 
 
+
+//10数字分类权重
+#include "digit10_int_weight0.h"
+#include "digit10_int_weight1.h"
+#include "digit10_int_weight2.h"
+#include "digit10_int_weight3.h"
+#include "digit10_int_weight4.h"
+#include "digit10_int_weight5.h"
+
+//25字母分类权重
+#include "letter25_int_weight0.h"
+#include "letter25_int_weight1.h"
+#include "letter25_int_weight2.h"
+#include "letter25_int_weight3.h"
+#include "letter25_int_weight4.h"
+#include "letter25_int_weight5.h"
+//25字母分类权重 -- 0D
+#include "letter0D_int_weight0.h"
+#include "letter0D_int_weight1.h"
+#include "letter0D_int_weight2.h"
+#include "letter0D_int_weight3.h"
+#include "letter0D_int_weight4.h"
+#include "letter0D_int_weight5.h"
+
+//25字母分类权重 -- 0Q
+#include "letter0Q_int_weight0.h"
+#include "letter0Q_int_weight1.h"
+#include "letter0Q_int_weight2.h"
+#include "letter0Q_int_weight3.h"
+#include "letter0Q_int_weight4.h"
+#include "letter0Q_int_weight5.h"
+
+//25字母分类权重 -- 0G
+#include "letter0G_int_weight0.h"
+#include "letter0G_int_weight1.h"
+#include "letter0G_int_weight2.h"
+#include "letter0G_int_weight3.h"
+#include "letter0G_int_weight4.h"
+#include "letter0G_int_weight5.h"
+
 #endif //DR_C_WEIGHT_H

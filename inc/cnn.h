@@ -66,7 +66,7 @@ typedef struct {
     Dense FC2;
 } CNN;
 
-//数字识别混合CNN模型
+//字符识别混合CNN模型
 typedef struct {
 //    34分类器
 //    标志位,是否初始化过
@@ -87,16 +87,54 @@ typedef struct {
     CNN model_binary_8B;
 } CharCNNClassifier;
 
+//字符识别--纯字母CNN模型
+typedef struct {
+//    标志位,是否初始化过
+    BOOL init;
+//    25分类器
+    CNN model_all;
+
+//    2分类 0D
+    CNN model_binary_0D;
+
+//    2分类 0Q
+    CNN model_binary_0Q;
+
+//    2分类 0G
+    CNN model_binary_0G;
+
+} LetterCNNClassifier;
+
+//字符识别--纯数字CNN模型
+typedef struct {
+//    标志位,是否初始化过
+    BOOL init;
+//    10分类器
+    CNN model_all;
+} DigitCNNClassifier;
+
 
 //CNN model init
 void CNNModelInit(CharCNNClassifier *model);
+void LetterCNNModelInit(LetterCNNClassifier *model);
+void DigitCNNModelInit(DigitCNNClassifier *model);
 
 CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage);
+CHAR LetterCNNModelPredict(LetterCNNClassifier *model, IplImage *pImage);
+CHAR DigitCNNModelPredict(DigitCNNClassifier *model, IplImage *pImage) ;
+
+CHAR LetterCNNModelPredictBinary0D(LetterCNNClassifier *model, IplImage *pImage);
+CHAR LetterCNNModelPredictBinary0Q(LetterCNNClassifier *model, IplImage *pImage);
+CHAR LetterCNNModelPredictBinary0G(LetterCNNClassifier *model, IplImage *pImage);
 
 CHAR CNNModelPredictBinary56(CharCNNClassifier *model, IplImage *pImage) ;
 
 CHAR CNNModelPredictBinary8B(CharCNNClassifier *model, IplImage *pImage);
 
 CHAR CNNModelPredictBinary0DQ(CharCNNClassifier *model, IplImage *pImage) ;
+
+CHAR LocalRegionGrayValuePredictEF(IplImage *pImage);
+CHAR LocalRegionGrayValuePredictRP(IplImage *pImage);
+CHAR LocalRegionGrayValuePredictTI(IplImage *pImage);
 
 #endif
