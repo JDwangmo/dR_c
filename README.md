@@ -2,6 +2,78 @@
 
 
 
+******* 20170103 *******
+字母
+（1）总体分类的3个准确率
+    -整形：（测试：0.999880，应用:0.999636，新样本：0.996623）
+（2）加了二分类的3个准确率
+    -整形：（测试：0.999729，应用：0.999607，新样本:0.999189）
+（3）加了局部灰度值二分类的3个准确率
+    -整形：（测试：0.999729，应用：0.999607，新样本:0.999325）
+
+数字：
+（1）总体分类的3个准确率
+    -整形：（测试：0.999885，应用:0.999962，新样本：0.999812）
+（2）加了二分类的3个准确率
+    -整形：（测试：0.999885，应用：0.999962，新样本:0.999812）
+（3）加了局部灰度值二分类的3个准确率
+    -整形：（测试：0.999914，应用：0.999978，新样本:0.999765）
+ 
+混合:
+（1）总体分类的3个准确率
+    -整形：（测试：0.999720，应用:0.999634，新样本：0.997360）
+        --- 测试集 - badcase
+            The 2431's image: Q(Predict),0(Real),True:0 
+            The 8021's image: Z(Predict),2(Real),True:0 
+            The 9460's image: Z(Predict),2(Real),True:0 
+            The 21833's image: 5(Predict),6(Real),True:0 
+            The 21892's image: 5(Predict),6(Real),True:0 
+            The 22705's image: K(Predict),6(Real),True:0 
+            The 23102's image: 5(Predict),6(Real),True:0 
+            The 23682's image: 8(Predict),6(Real),True:0 
+            The 23789's image: 5(Predict),6(Real),True:0 
+            The 23899's image: 8(Predict),6(Real),True:0 
+            The 35908's image: N(Predict),A(Real),True:0 
+            The 38395's image: 0(Predict),D(Real),True:0 
+            The 39156's image: 0(Predict),D(Real),True:0 
+            The 40711's image: E(Predict),F(Real),True:0 
+            The 40943's image: E(Predict),F(Real),True:0 
+            The 42501's image: C(Predict),G(Real),True:0 
+            The 52017's image: F(Predict),P(Real),True:0 
+            The 53084's image: 0(Predict),Q(Real),True:0 
+            
+（2）加了二分类的3个准确率
+    -整形：（测试：0.999845，应用：0.999721，新样本:0.997775）
+        --- 测试集 - badcase
+            The 2431's image: Q(Predict),0(Real),True:0 
+            The 8021's image: Z(Predict),2(Real),True:0 
+            The 9460's image: Z(Predict),2(Real),True:0 
+            The 21833's image: 5(Predict),6(Real),True:0 
+            The 21892's image: 5(Predict),6(Real),True:0 
+            The 22705's image: K(Predict),6(Real),True:0 
+            The 23102's image: 5(Predict),6(Real),True:0 
+            The 23682's image: 8(Predict),6(Real),True:0 
+            The 23789's image: 5(Predict),6(Real),True:0 
+            The 23899's image: 8(Predict),6(Real),True:0 
+            The 35908's image: N(Predict),A(Real),True:0 
+            The 38395's image: 0(Predict),D(Real),True:0 
+            The 39156's image: 0(Predict),D(Real),True:0 
+            The 40711's image: E(Predict),F(Real),True:0 
+            The 40943's image: E(Predict),F(Real),True:0 
+            The 42501's image: C(Predict),G(Real),True:0 
+            The 52017's image: F(Predict),P(Real),True:0 
+            The 53084's image: 0(Predict),Q(Real),True:0 
+
+（3）加了局部灰度值二分类的3个准确率
+    -整形：（测试：0.999876，应用：0.999891，新样本:0.998190）
+        --- 测试集 - badcase 8 个
+            The 8021's image: Z(Predict),2(Real),True:0 
+            The 9460's image: Z(Predict),2(Real),True:0 
+            The 22705's image: K(Predict),6(Real),True:0 
+            The 23682's image: 8(Predict),6(Real),True:0 
+            The 23899's image: 8(Predict),6(Real),True:0 
+            The 35908's image: N(Predict),A(Real),True:0 
+            The 42501's image: C(Predict),G(Real),True:0 
 
 ******* 20161214 *******
 字母

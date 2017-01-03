@@ -9,8 +9,13 @@
 #include "imageIO.h"
 #include "recognizer.h"
 #include "sys/time.h"
+// ******** 参数设置 ***********
 //0-merge,1-digit,2-letter
 #define TEST_TYPE 0
+//0-test,1-other,2-other-new
+#define DATA_TYPE 0
+
+
 char Index_To_Char[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
                         'J', 'K', 'L',
                         'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'W', 'X', 'Y', 'Z'};
@@ -29,14 +34,22 @@ int main() {
     printf("开始测试！");
 #endif
 //加载图片数据
-    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_testdata.mat";
-    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_testdata.mat";
+#if DATA_TYPE ==0
+    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_test_data.mat";
+    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_test_data.mat";
+#elif DATA_TYPE == 1
+    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_other_data.mat";
+    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_other_data.mat";
+#elif DATA_TYPE == 2
+    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_other_new_data.mat";
+    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_other_new_data.mat";
+#endif
     image_array = ReadImageFromFile(images_file_name);
     label_array = ReadLabelFromFile(labels_file_name);
     gettimeofday(&start, 0);
 
     for (image_index = 0; image_index < image_array.number_of_image; image_index++) {
-//        image_index = 39500;
+//        image_index = 221391;
 //        printmat(&image_array.imageList[image_index]);
 #if TEST_TYPE == 2
         if (label_array[image_index] < 10 && label_array[image_index] > 0)continue;
@@ -49,6 +62,7 @@ int main() {
         y_pred = RecognizeSCAU(&image_array.imageList[image_index], 0, flag);
 
 #if DEBUG_LEVEL > 0
+        if(y_pred != Index_To_Char[label_array[image_index]])
         printf("The %d's image: %c(Predict),%c(Real),True:%d \n", image_index,
                y_pred,
                Index_To_Char[label_array[image_index]],

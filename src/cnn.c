@@ -9,7 +9,8 @@
 
 #include <cnn.h>
 
-//CNN model init
+
+// ***************** CNN model init -- merge ***********************
 void CNNModelInit(CharCNNClassifier *model) {
 
 
@@ -155,7 +156,7 @@ void CNNModelInit(CharCNNClassifier *model) {
     //endregion
 }
 
-//CNN model init
+//CNN model init -- letter
 void LetterCNNModelInit(LetterCNNClassifier *model) {
 
 
@@ -322,6 +323,7 @@ int TanhApproximateFunction(int x) {
         return (int) ((exp(x) - exp(-x)) / (exp(x) + exp(-x)));
 }
 
+// **************** CNN model predict --- merge ************************
 CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
     int row, col, i, j, k;
     INT8U output_row, output_col;
@@ -552,7 +554,6 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
     max = -1000000;
     k = 0;
 
-
     for (row = 0; row < model->model_all.FC2.outputNum; row++) {
         sum = 0;
         for (col = 0; col < model->model_all.FC2.inputNum; col++) {
@@ -567,184 +568,92 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
         }
     }
     //endregion
-//    return index_to_char[k];
+
+    //region CNN 二分类
+#if MODEL_MODE > 1
     if (index_to_char[k] == '5' || index_to_char[k] == '6')
-        return index_to_char[CNNModelPredictBinary56(model, pImage)];
-    else if (k == 0 || index_to_char[k] == 'D' || index_to_char[k] == 'Q')
-        return index_to_char[CNNModelPredictBinary0DQ(model, pImage)];
-    else if (k == 8 || index_to_char[k] == 'B')
-        return index_to_char[CNNModelPredictBinary8B(model, pImage)];
-    //    使用局部灰度值来二分类
-    else if (index_to_char[k] == 'E' || index_to_char[k] == 'F')
-        return LocalRegionGrayValuePredictEF(pImage);
-    else if (index_to_char[k] == 'R' || index_to_char[k] == 'P')
-        return LocalRegionGrayValuePredictRP(pImage);
-    else if (index_to_char[k] == 'T' || index_to_char[k] == 'I')
-        return LocalRegionGrayValuePredictTI(pImage);
-    else
-        return index_to_char[k];
-//    return '1' ;
+        k = CNNModelPredictBinary56(model, pImage);
+    if (k == 0 || index_to_char[k] == 'D' || index_to_char[k] == 'Q')
+        k = CNNModelPredictBinary0DQ(model, pImage);
+    if (k == 8 || index_to_char[k] == 'B')
+        k = CNNModelPredictBinary8B(model, pImage);
+#endif
+    //endregion
+    // region 使用局部灰度值来二分类
+#if MODEL_MODE > 2
+    //  R-P:  对区域 [8:14,8:14] 求灰度和, 临界值：1953
+    if (index_to_char[k] == 'R' || index_to_char[k] == 'P')
+        if (LocalRegionGrayValuePredictRP(pImage) == 'R')
+            k = 26;
+        else
+            k = 24;
+//  I-T: : 对区域 [1:5,1:6]，[1:5,9:14] 求灰度和  I：0-44   T：2676-6481  临界值：1316
+    if (index_to_char[k] == 'T' || index_to_char[k] == 'I')
+        //    使用局部灰度值来二分类
+        if (LocalRegionGrayValuePredictTI(pImage) == 'T')
+            k = 28;
+        else
+            k = 18;
+
+//  T-J: : 对区域 [7:14,1:14] 进行二值化，取这个小区域的左下角 [5::,0:2]，如果这个区域有黑点，就修正为 J
+//    注意，这里只是单向修改，即 修改 T 的预测结果 ，对于预测为 J 的 不修改
+    if (index_to_char[k] == 'T')
+        //    使用局部灰度值来二分类
+        if (LocalRegionGrayValuePredictTJ(pImage) == 'T')
+            k = 28;//T
+        else
+            k = 19;//J
+
+//    E-F : 对区域 [7:,::] 进行二值化，然后取小区域的  [3:7,6:14]    F:：0-1，E：7-24  临界值：3
+    if (index_to_char[k] == 'E' || index_to_char[k] == 'F')
+        //    使用局部灰度值来二分类
+        if (LocalRegionGrayValuePredictEF(pImage) == 'E')
+            k = 14;
+        else
+            k = 15;
+//    7-Z : 对区域 [7:14,1:14] 进行二值化，然后取这个小区域的左下角（4*4，3::,0:4）和右下角（4*4，3::,9::），选择点数最小的这个区域来计算，7:0-1   Z：3-12
+    if (index_to_char[k] == 'Z' || index_to_char[k] == '7')
+        if (LocalRegionGrayValuePredictZ7(pImage) == 'Z')
+            k = 33;//Z
+        else
+            k = 7;//7
+//    8-3：区域 [1:14,1:6]， 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == '8' || index_to_char[k] == '3')
+        if (LocalRegionGrayValuePredict83(pImage) == '8')
+            k = 8;//8
+        else
+            k = 3;//3
+//    0-C：区域 [1:14,9:14], 对区域进行二值化， 并判断是否有环 --- 这里是单向的，只对预测成 C 修正，预测成0的不修正
+    if (index_to_char[k] == 'C')
+        if (LocalRegionGrayValuePredict0C(pImage) == '0')
+            k = 0;//0
+        else
+            k = 12;//C
+//    P-F：区域 [1:9,8:14] , 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == 'P' || index_to_char[k] == 'F')
+        if (LocalRegionGrayValuePredictPF(pImage) == 'P')
+            k = 24;//P
+        else
+            k = 15;//F
+//    6-E：区域 [5:14,9:14], 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == '6' || index_to_char[k] == 'E')
+        if (LocalRegionGrayValue6redict6E(pImage) == '6')
+            k = 6;//6
+        else
+            k = 14;//E
+//    6-5：区域 [6:14,1:7]， 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == '6' || index_to_char[k] == '5')
+        if (LocalRegionGrayValue6redict65(pImage) == '6')
+            k = 6;//6
+        else
+            k = 5;//5
+
+#endif
+    // endregion
+    return index_to_char[k];
 }
 
-CHAR LetterCNNModelPredict(LetterCNNClassifier *model, IplImage *pImage) {
-    int row, col, i, j, k;
-    INT8U output_row, output_col;
-    int map_index_position, image_index_position;
-    int sum, max, value;
-    int c11_output[model->model_all.C11.outChannels * 13 * 13];
-    int merge_output[model->model_all.FC1.inputNum];
-    int fc1_output[model->model_all.FC1.outputNum];
-    char index_to_char[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-                            'I', 'J', 'K', 'L', 'M', 'N', '0', 'P', 'Q',
-                            'R', 'S', 'T', 'U', 'W', 'X', 'Y', 'Z'};
-    CHAR result;
-    //region 3*3 convolution
-    //    output size
-//    3*3
-//    15-3+1=13
-    output_row = 13;
-    output_col = 13;
-    for (k = 0; k < model->model_all.C11.outChannels; k++) {
-//        for each filters
-        for (i = 0; i < output_row; i++) {
-            //        i represents start point in row
-            for (j = 0; j < output_col; j++) {
-                //        j represents start point in col
-                sum = 0;
-                for (row = 0; row < model->model_all.C11.height; row++) {
-                    for (col = 0; col < model->model_all.C11.widthStep; col++) {
-                        //      index position
-                        map_index_position = k * 3 * 3 + row * model->model_all.C11.widthStep + col;
-                        image_index_position = (i + row) * pImage->widthStep + (j + col);
-//                        printf("%d,%d\n", map_index_position, image_index_position);
-//                        printf("%ld,%d,%ld\n", C11_Map_Weight[map_index_position],
-//                               pImage->imageData[image_index_position],
-//                               C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position]);
-                        sum += Letter_C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position];
-                    }
-                }
-                c11_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(
-                        sum + Letter_C11_B_Weight[k]);
-//                printf("%ld\n",sum + C11_B_Weight[k]);
-            }
-        }
-//                printmat(pImage);
-//        printmat2(c11_output, 13, 13);
-//                printf("%f",sum);
-//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
-//        assert(NULL);
-    }
-
-
-    output_row = 6;
-    output_col = 6;
-    for (k = 0; k < model->model_all.C11.outChannels; k++) {
-//        for each filters
-        for (i = 0; i < output_row; i++) {
-            //        i represents start point in row
-            for (j = 0; j < output_col; j++) {
-                //        j represents start point in col
-                max = -10;
-                for (row = 0; row < 2; row++) {
-                    for (col = 0; col < 2; col++) {
-                        value = c11_output[k * 13 * 13 + (2 * i + row) * 13 + (2 * j + col)];
-                        if (value > max) {
-                            max = value;
-                        }
-
-                    }
-                }
-                merge_output[k * 6 * 6 + i * 6 + j] = max;
-            }
-        }
-//        printmat2(merge_output, 6, 6);
-//                printf("%f",sum);
-//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
-//        assert(NULL);
-    }
-    //endregion
-
-
-    //region FC1 - 360*40
-
-    for (row = 0; row < model->model_all.FC1.outputNum; row++) {
-        sum = 0;
-        for (col = 0; col < model->model_all.FC1.inputNum; col++) {
-            sum += merge_output[col] * Letter_FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
-        }
-//        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
-        fc1_output[row] = TanhApproximateFunction(sum + Letter_FC1_B_Weight[row]);
-//        fc1_output[row] = sum + FC1_B_Weight[row];
-    }
-    //endregion
-
-    //region FC2 - 40*34
-    max = -1000000;
-    k = 0;
-
-
-    for (row = 0; row < model->model_all.FC2.outputNum; row++) {
-        sum = 0;
-        for (col = 0; col < model->model_all.FC2.inputNum; col++) {
-//            printf("%d,%d\n",fc1_output[col],FC2_Map_Weight[row * model->model_all.FC2.inputNum + col]);
-            sum += fc1_output[col] * Letter_FC2_Map_Weight[row * model->model_all.FC2.inputNum + col];
-        }
-        value = sum + Letter_FC2_B_Weight[row];
-//        printf("%d\n",value);
-        if (value > max) {
-            max = value;
-            k = row;
-        }
-    }
-
-    result = index_to_char[k];
-    //endregion
-    if (result == '0' || result == 'D')
-        if (LetterCNNModelPredictBinary0D(model, pImage) == 'D')
-            return 'D';
-        else
-            result = '0';
-    if (result == '0' || result == 'Q')
-        if (LetterCNNModelPredictBinary0Q(model, pImage) == 'Q')
-            return 'Q';
-        else
-            result = '0';
-    if (result == '0' || result == 'G')
-        if (LetterCNNModelPredictBinary0G(model, pImage) == 'G')
-            return 'G';
-        else
-            result = '0';
-//    使用局部灰度值来二分类
-    if (result == 'E' || result == 'F')
-        return LocalRegionGrayValuePredictEF(pImage);
-    if (result == 'R' || result == 'P')
-        return LocalRegionGrayValuePredictRP(pImage);
-    if (result == 'T' || result == 'I')
-        return LocalRegionGrayValuePredictTI(pImage);
-    return result;
-}
-
-
-CHAR LocalRegionGrayValuePredictEF(IplImage *pImage) {
-    INT32U row, col, locate_value, sum_value = 0, min_value = 300;
-    for (row = 10; row < 14; row++) {
-        for (col = 5; col < 14; col++) {
-            // get the pixel
-            locate_value = (INT32U) (255 - pImage->imageData[row * pImage->widthStep + col]);
-            sum_value += locate_value;
-            if (locate_value < min_value) {
-                min_value = locate_value;
-            }
-        }
-    }
-//    总共36个像素点：4*9
-//    printf("%d,%d,%d\n",sum_value,min_value,(sum_value-min_value*36));
-    if(sum_value-min_value*36>1933)
-        return 'E';
-    else
-        return 'F';
-}
-
+//  R-P:  对区域 [8:14,8:14] 求灰度和, 临界值：1953
 CHAR LocalRegionGrayValuePredictRP(IplImage *pImage) {
     INT32U row, col, locate_value, sum_value = 0, min_value = 300;
     for (row = 8; row < 14; row++) {
@@ -759,16 +668,20 @@ CHAR LocalRegionGrayValuePredictRP(IplImage *pImage) {
     }
 //    总共36个像素点：6*6=36
 //    printf("%d,%d,%d\n",sum_value,min_value,(sum_value-min_value*36));
-    if(sum_value-min_value*36>1953)
+    if (sum_value - min_value * 36 > 1953)
         return 'R';
     else
         return 'P';
 }
+
+
+//  I-T: : 对区域 [1:5,1:6]，[1:5,9:14] 求灰度和  I：0-44   T：2676-6481  临界值：1316
 CHAR LocalRegionGrayValuePredictTI(IplImage *pImage) {
     INT32U row, col, locate_value, sum_value = 0, min_value = 300;
+//    区域 [1:5,1:6], 4*5
     for (row = 1; row < 5; row++) {
-        for (col = 1; col < 14; col++) {
-            // get the pixel
+        for (col = 1; col < 6; col++) {
+            // get the pixel, 黑白颠倒
             locate_value = (INT32U) (255 - pImage->imageData[row * pImage->widthStep + col]);
             sum_value += locate_value;
             if (locate_value < min_value) {
@@ -776,127 +689,481 @@ CHAR LocalRegionGrayValuePredictTI(IplImage *pImage) {
             }
         }
     }
-//    总共36个像素点：4*13=52
+//    区域 [1:5,9:14],4*4
+    for (row = 1; row < 5; row++) {
+        for (col = 9; col < 14; col++) {
+            // get the pixel, 黑白颠倒
+            locate_value = (INT32U) (255 - pImage->imageData[row * pImage->widthStep + col]);
+            sum_value += locate_value;
+            if (locate_value < min_value) {
+                min_value = locate_value;
+            }
+        }
+    }
+//    总共40个像素点：4*5+4*4=36
 //    printf("%d,%d,%d\n",sum_value,min_value,(sum_value-min_value*36));
-    if(sum_value-min_value*52>3219)
+    if (sum_value - min_value * 36 > 1316)
         return 'T';
     else
         return 'I';
 }
 
-CHAR DigitCNNModelPredict(DigitCNNClassifier *model, IplImage *pImage) {
-    int row, col, i, j, k;
-    INT8U output_row, output_col;
-    int map_index_position, image_index_position;
-    int sum, max, value;
-    int c11_output[model->model_all.C11.outChannels * 13 * 13];
-//    int c21_output[25 * 11 * 11], c31_output[25 * 9 * 9];
-    int merge_output[model->model_all.FC1.inputNum];
-    int fc1_output[model->model_all.FC1.outputNum];
-    char index_to_char[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-    /*,fc2_output[model->model_all.FC2.outputNum]*/
-//    5-->3-->7
-//    length - 1925
-//    int merge_output[25 * 5 * 5 + 25 * 6 * 6 + 25 * 4 * 4];
+//  T-J: : 对区域 [7:14,1:14] 进行二值化，取这个小区域的左下角 [5:,0:2]，如果这个区域有白点，就修正为 J
+CHAR LocalRegionGrayValuePredictTJ(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+//    区域 [7:14,1:14], 7*13
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
 
-    //region 3*3 convolution
-    //    output size
-//    3*3
-//    15-3+1=13
-    output_row = 13;
-    output_col = 13;
-    for (k = 0; k < model->model_all.C11.outChannels; k++) {
-//        for each filters
-        for (i = 0; i < output_row; i++) {
-            //        i represents start point in row
-            for (j = 0; j < output_col; j++) {
-                //        j represents start point in col
-                sum = 0;
-                for (row = 0; row < model->model_all.C11.height; row++) {
-                    for (col = 0; col < model->model_all.C11.widthStep; col++) {
-                        //      index position
-                        map_index_position = k * 3 * 3 + row * model->model_all.C11.widthStep + col;
-                        image_index_position = (i + row) * pImage->widthStep + (j + col);
-//                        printf("%d,%d\n", map_index_position, image_index_position);
-//                        printf("%ld,%d,%ld\n", C11_Map_Weight[map_index_position],
-//                               pImage->imageData[image_index_position],
-//                               C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position]);
-                        sum += Digit_C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position];
-                    }
-                }
-                c11_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(
-                        sum + Digit_C11_B_Weight[k]);
-//                printf("%ld\n",sum + C11_B_Weight[k]);
-            }
-        }
-//                printmat(pImage);
-//        printmat2(c11_output, 13, 13);
-//                printf("%f",sum);
-//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
-//        assert(NULL);
-    }
+    for (row = 7; row < 14; row++) {
+        for (col = 1; col < 14; col++) {
 
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
 
-    output_row = 6;
-    output_col = 6;
-    for (k = 0; k < model->model_all.C11.outChannels; k++) {
-//        for each filters
-        for (i = 0; i < output_row; i++) {
-            //        i represents start point in row
-            for (j = 0; j < output_col; j++) {
-                //        j represents start point in col
-                max = -10;
-                for (row = 0; row < 2; row++) {
-                    for (col = 0; col < 2; col++) {
-                        value = c11_output[k * 13 * 13 + (2 * i + row) * 13 + (2 * j + col)];
-                        if (value > max) {
-                            max = value;
-                        }
-
-                    }
-                }
-                merge_output[k * 6 * 6 + i * 6 + j] = max;
-            }
-        }
-//        printmat2(merge_output, 6, 6);
-//                printf("%f",sum);
-//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
-//        assert(NULL);
-    }
-    //endregion
-
-    //region FC1 - 360*40
-
-    for (row = 0; row < model->model_all.FC1.outputNum; row++) {
-        sum = 0;
-        for (col = 0; col < model->model_all.FC1.inputNum; col++) {
-            sum += merge_output[col] * Digit_FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
-        }
-//        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
-        fc1_output[row] = TanhApproximateFunction(sum + Digit_FC1_B_Weight[row]);
-//        fc1_output[row] = sum + FC1_B_Weight[row];
-    }
-    //endregion
-
-    //region FC2 - 40*34
-    max = -1000000;
-    k = 0;
-    for (row = 0; row < model->model_all.FC2.outputNum; row++) {
-        sum = 0;
-        for (col = 0; col < model->model_all.FC2.inputNum; col++) {
-//            printf("%d,%d\n",fc1_output[col],FC2_Map_Weight[row * model->model_all.FC2.inputNum + col]);
-            sum += fc1_output[col] * Digit_FC2_Map_Weight[row * model->model_all.FC2.inputNum + col];
-        }
-        value = sum + Digit_FC2_B_Weight[row];
-//        printf("%d\n",value);
-        if (value > max) {
-            max = value;
-            k = row;
         }
     }
-    //endregion
-    return index_to_char[k];
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+    //    区域 [12:14,1:3],2*2
+    for (row = 12; row < 14; row++) {
+        for (col = 1; col < 3; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
 
+            sum_value += locate_value;
+        }
+    }
+    if (sum_value > 0)
+        return 'J';
+    else
+        return 'T';
+}
+
+// 寻找 最优 二值化 阈值
+int get_best_threshold(const UINT *count_of_gray) {
+    UINT accumulation_of_pixel[255] = {0};
+    UINT accumulation_of_gray[255] = {0};
+    int i, w1, w2, u1, u2, v, max_v = 0, best_threshold = 0;
+//    初始值
+    accumulation_of_pixel[0] = count_of_gray[0];
+    accumulation_of_gray[0] = 0;
+    for (i = 1; i < 256; i++) {
+//        <= i 时
+        accumulation_of_pixel[i] = accumulation_of_pixel[i - 1] + count_of_gray[i];
+        accumulation_of_gray[i] = accumulation_of_gray[i - 1] + count_of_gray[i] * i;
+    }
+    for (i = 0; i < 256; i++) {
+//        <=i ,有多少像素点
+        w1 = accumulation_of_pixel[i];
+//        >i ,有多少像素点
+        w2 = accumulation_of_pixel[255] - w1;
+        if (w1 * w2 == 0)
+            continue;
+        u1 = accumulation_of_gray[i] / w1;
+        u2 = (accumulation_of_gray[255] - accumulation_of_gray[i]) / w2;
+        v = w1 * w2 * (u1 - u2) * (u1 - u2);
+        if (v > max_v) {
+            max_v = v;
+            best_threshold = i;
+        }
+    }
+
+    return best_threshold;
+}
+
+//    E-F : 对区域 [7:,::] 进行二值化，然后取小区域的  [3:7,6:14]    F:：0-1，E：7-24  临界值：3
+CHAR LocalRegionGrayValuePredictEF(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0, min_value = 300;
+
+    //    区域 [7:,:], 7*13
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 7; row < 15; row++) {
+        for (col = 0; col < 15; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    //    区域 [10:14,6:14],4*8
+    for (row = 12; row < 14; row++) {
+        for (col = 6; col < 14; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+    }
+
+    if (sum_value > 3)
+        return 'E';
+    else
+        return 'F';
+}
+
+//    7-Z : 对区域 [7:14,1:14] 进行二值化，然后取这个小区域的左下角（4*4，3:,0:4）和右下角（4*4，3:,9:），选择点数最小的区域来计算，7:0-1   Z：3-12
+CHAR LocalRegionGrayValuePredictZ7(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value1 = 0, sum_value = 0;
+
+    //    区域 [7:14,1:14]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 7; row < 14; row++) {
+        for (col = 1; col < 14; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    //    区域 [10:14,1:5] 和
+    for (row = 10; row < 14; row++) {
+        for (col = 1; col < 5; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+    }
+//    区域 [10:14,10:14]
+    for (row = 10; row < 14; row++) {
+        for (col = 10; col < 14; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            //            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value1 += locate_value;
+        }
+    }
+
+    if (sum_value1 < sum_value)
+        sum_value = sum_value1;
+
+    if (sum_value > 2)
+        return 'Z';
+    else
+        return '7';
+}
+
+//    8-3：区域 [1:14,1:6]， 对区域进行二值化， 并判断是否有环
+CHAR LocalRegionGrayValuePredict83(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+    INT32U is_white = 0, white_to_black = 0;
+
+    //    区域 [1:14,1:6]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 1; row < 14; row++) {
+        for (col = 1; col < 6; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    for (row = 1; row < 14; row++) {
+//        计算这一行 二值化后 灰度值大小
+        sum_value = 0;
+        for (col = 1; col < 6; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+        if (white_to_black == 1 && sum_value > 0) {
+            return '3';
+        }
+
+        if (is_white == 1 && sum_value == 0) {
+//            白转黑
+            white_to_black = 1;
+//            return '3';
+        }
+
+
+        if (sum_value > 0)
+            is_white = 1;
+
+    }
+
+    if (is_white == 0)
+//        非环
+        return '3';
+    else
+        return '8';
+}
+
+//    0-C：区域 [1:14,9:14], 对区域进行二值化， 并判断是否有环
+CHAR LocalRegionGrayValuePredict0C(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+    INT32U is_white = 0, white_to_black = 0;
+
+    //    区域 [1:14,9:14]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 1; row < 14; row++) {
+        for (col = 9; col < 14; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    for (row = 1; row < 14; row++) {
+//        计算这一行 二值化后 灰度值大小
+        sum_value = 0;
+        for (col = 9; col < 14; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+        if (white_to_black == 1 && sum_value > 0) {
+            //        非环
+            return 'C';
+        }
+
+        if (is_white == 1 && sum_value == 0) {
+//            白转黑
+            white_to_black = 1;
+        }
+
+
+        if (sum_value > 0)
+            is_white = 1;
+
+    }
+
+    if (is_white == 0)
+//        非环
+        return 'C';
+    else
+        return '0';
+}
+
+//    P-F：区域 [1:9,8:14] , 对区域进行二值化， 并判断是否有环
+CHAR LocalRegionGrayValuePredictPF(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+    INT32U is_white = 0, white_to_black = 0;
+
+    //    区域 [1:9,8:14]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 1; row < 9; row++) {
+        for (col = 8; col < 14; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    for (row = 1; row < 9; row++) {
+//        计算这一行 二值化后 灰度值大小
+        sum_value = 0;
+        for (col = 8; col < 14; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+        if (white_to_black == 1 && sum_value > 0) {
+            //        非环
+            return 'F';
+        }
+
+        if (is_white == 1 && sum_value == 0) {
+//            白转黑
+            white_to_black = 1;
+        }
+
+
+        if (sum_value > 0)
+            is_white = 1;
+
+    }
+
+    if (is_white == 0)
+//        非环
+        return 'F';
+    else
+        return 'P';
+}
+
+//    6-E：区域 [5:14,9:14], 对区域进行二值化， 并判断是否有环
+CHAR LocalRegionGrayValue6redict6E(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+    INT32U is_white = 0, white_to_black = 0;
+
+    //    区域 [5:14,9:14]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 5; row < 14; row++) {
+        for (col = 9; col < 14; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    for (row = 5; row < 14; row++) {
+//        计算这一行 二值化后 灰度值大小
+        sum_value = 0;
+        for (col = 9; col < 14; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+        if (white_to_black == 1 && sum_value > 0) {
+            //        非环
+            return 'E';
+        }
+
+        if (is_white == 1 && sum_value == 0) {
+//            白转黑
+            white_to_black = 1;
+//            return '3';
+        }
+
+
+        if (sum_value > 0)
+            is_white = 1;
+
+    }
+
+    if (is_white == 0)
+//        非环
+        return 'E';
+    else
+        return '6';
+}
+
+//    6-5：区域 [6:14,1:7]， 对区域进行二值化， 并判断是否有环
+CHAR LocalRegionGrayValue6redict65(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+    INT32U is_white = 0, white_to_black = 0;
+
+    //    区域 [6:14,1:7]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 6; row < 14; row++) {
+        for (col = 1; col < 7; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    for (row = 6; row < 14; row++) {
+//        计算这一行 二值化后 灰度值大小
+        sum_value = 0;
+        for (col = 1; col < 7; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+        if (white_to_black == 1 && sum_value > 0) {
+//            白转黑 又转白
+            return '5';
+        }
+
+        if (is_white == 1 && sum_value == 0) {
+//            白转黑
+            white_to_black = 1;
+        }
+
+        if (sum_value > 0)
+            is_white = 1;
+
+    }
+
+    if (is_white == 0)
+//        非环
+        return '5';
+    else
+        return '6';
 }
 
 
@@ -1029,7 +1296,6 @@ CHAR CNNModelPredictBinary0DQ(CharCNNClassifier *model, IplImage *pImage) {
 //    return '1' ;
 }
 
-
 CHAR CNNModelPredictBinary56(CharCNNClassifier *model, IplImage *pImage) {
     int row, col, i, j, k;
     INT8U output_row, output_col;
@@ -1157,7 +1423,6 @@ CHAR CNNModelPredictBinary56(CharCNNClassifier *model, IplImage *pImage) {
         return 6;
 //    return '1' ;
 }
-
 
 CHAR CNNModelPredictBinary8B(CharCNNClassifier *model, IplImage *pImage) {
     int row, col, i, j, k;
@@ -1292,6 +1557,193 @@ CHAR CNNModelPredictBinary8B(CharCNNClassifier *model, IplImage *pImage) {
 //    return '1' ;
 }
 
+// *********************** CNN model predict --- letter ***************************************
+CHAR LetterCNNModelPredict(LetterCNNClassifier *model, IplImage *pImage) {
+    int row, col, i, j, k;
+    INT8U output_row, output_col;
+    int map_index_position, image_index_position;
+    int sum, max, value;
+    int c11_output[model->model_all.C11.outChannels * 13 * 13];
+    int merge_output[model->model_all.FC1.inputNum];
+    int fc1_output[model->model_all.FC1.outputNum];
+    char index_to_char[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+                            'I', 'J', 'K', 'L', 'M', 'N', '0', 'P', 'Q',
+                            'R', 'S', 'T', 'U', 'W', 'X', 'Y', 'Z'};
+    CHAR result;
+    //region 3*3 convolution
+    //    output size
+//    3*3
+//    15-3+1=13
+    output_row = 13;
+    output_col = 13;
+    for (k = 0; k < model->model_all.C11.outChannels; k++) {
+//        for each filters
+        for (i = 0; i < output_row; i++) {
+            //        i represents start point in row
+            for (j = 0; j < output_col; j++) {
+                //        j represents start point in col
+                sum = 0;
+                for (row = 0; row < model->model_all.C11.height; row++) {
+                    for (col = 0; col < model->model_all.C11.widthStep; col++) {
+                        //      index position
+                        map_index_position = k * 3 * 3 + row * model->model_all.C11.widthStep + col;
+                        image_index_position = (i + row) * pImage->widthStep + (j + col);
+//                        printf("%d,%d\n", map_index_position, image_index_position);
+//                        printf("%ld,%d,%ld\n", C11_Map_Weight[map_index_position],
+//                               pImage->imageData[image_index_position],
+//                               C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position]);
+                        sum += Letter_C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position];
+                    }
+                }
+                c11_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(
+                        sum + Letter_C11_B_Weight[k]);
+//                printf("%ld\n",sum + C11_B_Weight[k]);
+            }
+        }
+//                printmat(pImage);
+//        printmat2(c11_output, 13, 13);
+//                printf("%f",sum);
+//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
+//        assert(NULL);
+    }
+
+
+    output_row = 6;
+    output_col = 6;
+    for (k = 0; k < model->model_all.C11.outChannels; k++) {
+//        for each filters
+        for (i = 0; i < output_row; i++) {
+            //        i represents start point in row
+            for (j = 0; j < output_col; j++) {
+                //        j represents start point in col
+                max = -10;
+                for (row = 0; row < 2; row++) {
+                    for (col = 0; col < 2; col++) {
+                        value = c11_output[k * 13 * 13 + (2 * i + row) * 13 + (2 * j + col)];
+                        if (value > max) {
+                            max = value;
+                        }
+
+                    }
+                }
+                merge_output[k * 6 * 6 + i * 6 + j] = max;
+            }
+        }
+//        printmat2(merge_output, 6, 6);
+//                printf("%f",sum);
+//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
+//        assert(NULL);
+    }
+    //endregion
+
+
+    //region FC1 - 360*40
+
+    for (row = 0; row < model->model_all.FC1.outputNum; row++) {
+        sum = 0;
+        for (col = 0; col < model->model_all.FC1.inputNum; col++) {
+            sum += merge_output[col] * Letter_FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
+        }
+//        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
+        fc1_output[row] = TanhApproximateFunction(sum + Letter_FC1_B_Weight[row]);
+//        fc1_output[row] = sum + FC1_B_Weight[row];
+    }
+    //endregion
+
+    //region FC2 - 40*34
+    max = -1000000;
+    k = 0;
+
+
+    for (row = 0; row < model->model_all.FC2.outputNum; row++) {
+        sum = 0;
+        for (col = 0; col < model->model_all.FC2.inputNum; col++) {
+//            printf("%d,%d\n",fc1_output[col],FC2_Map_Weight[row * model->model_all.FC2.inputNum + col]);
+            sum += fc1_output[col] * Letter_FC2_Map_Weight[row * model->model_all.FC2.inputNum + col];
+        }
+        value = sum + Letter_FC2_B_Weight[row];
+//        printf("%d\n",value);
+        if (value > max) {
+            max = value;
+            k = row;
+        }
+    }
+
+    //endregion
+
+
+
+    //region CNN 二分类
+#if MODEL_MODE > 1
+    if (index_to_char[k] == '0' || index_to_char[k] == 'D')
+        if (LetterCNNModelPredictBinary0D(model, pImage) == '0')
+            k = 14;
+        else
+            k = 3;
+    if (index_to_char[k] == '0' || index_to_char[k] == 'Q')
+        if (LetterCNNModelPredictBinary0Q(model, pImage) == '0')
+            k = 14;
+        else
+            k = 16;
+    if (index_to_char[k] == '0' || index_to_char[k] == 'G')
+        if (LetterCNNModelPredictBinary0G(model, pImage) == '0')
+            k = 14;
+        else
+            k = 6;
+#endif
+    //endregion
+
+    // region 使用局部灰度值来二分类
+#if MODEL_MODE > 2
+//  R-P:  对区域 [8:14,8:14] 求灰度和, 临界值：1953
+    if (index_to_char[k] == 'R' || index_to_char[k] == 'P')
+        if (LocalRegionGrayValuePredictRP(pImage) == 'R')
+            k = 17;
+        else
+            k = 15;
+//  I-T: : 对区域 [1:5,1:6]，[1:5,9:14] 求灰度和  I：0-44   T：2676-6481  临界值：1316
+    if (index_to_char[k] == 'T' || index_to_char[k] == 'I')
+        //    使用局部灰度值来二分类
+        if (LocalRegionGrayValuePredictTI(pImage) == 'T')
+            k = 19;
+        else
+            k = 8;
+
+//  T-J: : 对区域 [7:14,1:14] 进行二值化，取这个小区域的左下角 [5::,0:2]，如果这个区域有黑点，就修正为 J
+//    注意，这里只是单向修改，即 修改 T 的预测结果 ，对于预测为 J 的 不修改
+    if (index_to_char[k] == 'T')
+        //    使用局部灰度值来二分类
+        if (LocalRegionGrayValuePredictTJ(pImage) == 'T')
+            k = 19;//T
+        else
+            k = 9;//J
+
+//    E-F : 对区域 [7:,::] 进行二值化，然后取小区域的  [3:7,6:14]    F:：0-1，E：7-24  临界值：3
+    if (index_to_char[k] == 'E' || index_to_char[k] == 'F')
+        //    使用局部灰度值来二分类
+        if (LocalRegionGrayValuePredictEF(pImage) == 'E')
+            k = 4;
+        else
+            k = 5;
+
+//    0-C：区域 [1:14,9:14], 对区域进行二值化， 并判断是否有环 --- 这里是单向的，只对预测成 C 修正，预测成0的不修正
+    if (index_to_char[k] == 'C')
+        if (LocalRegionGrayValuePredict0C(pImage) == '0')
+            k = 14;//0
+        else
+            k = 2;//C
+//    P-F：区域 [1:9,8:14] , 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == 'P' || index_to_char[k] == 'F')
+        if (LocalRegionGrayValuePredictPF(pImage) == 'P')
+            k = 15;//P
+        else
+            k = 5;//F
+
+#endif
+    // endregion
+    return index_to_char[k];
+
+}
 
 CHAR LetterCNNModelPredictBinary0D(LetterCNNClassifier *model, IplImage *pImage) {
     int row, col, i, j, k;
@@ -1637,4 +2089,138 @@ CHAR LetterCNNModelPredictBinary0G(LetterCNNClassifier *model, IplImage *pImage)
     else
         return 'G';
 //    return '1' ;
+}
+
+// ************************  CNN model predict --- digit   *************************************
+CHAR DigitCNNModelPredict(DigitCNNClassifier *model, IplImage *pImage) {
+    int row, col, i, j, k;
+    INT8U output_row, output_col;
+    int map_index_position, image_index_position;
+    int sum, max, value;
+    int c11_output[model->model_all.C11.outChannels * 13 * 13];
+//    int c21_output[25 * 11 * 11], c31_output[25 * 9 * 9];
+    int merge_output[model->model_all.FC1.inputNum];
+    int fc1_output[model->model_all.FC1.outputNum];
+    char index_to_char[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    /*,fc2_output[model->model_all.FC2.outputNum]*/
+//    5-->3-->7
+//    length - 1925
+//    int merge_output[25 * 5 * 5 + 25 * 6 * 6 + 25 * 4 * 4];
+
+    //region 3*3 convolution
+    //    output size
+//    3*3
+//    15-3+1=13
+    output_row = 13;
+    output_col = 13;
+    for (k = 0; k < model->model_all.C11.outChannels; k++) {
+//        for each filters
+        for (i = 0; i < output_row; i++) {
+            //        i represents start point in row
+            for (j = 0; j < output_col; j++) {
+                //        j represents start point in col
+                sum = 0;
+                for (row = 0; row < model->model_all.C11.height; row++) {
+                    for (col = 0; col < model->model_all.C11.widthStep; col++) {
+                        //      index position
+                        map_index_position = k * 3 * 3 + row * model->model_all.C11.widthStep + col;
+                        image_index_position = (i + row) * pImage->widthStep + (j + col);
+//                        printf("%d,%d\n", map_index_position, image_index_position);
+//                        printf("%ld,%d,%ld\n", C11_Map_Weight[map_index_position],
+//                               pImage->imageData[image_index_position],
+//                               C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position]);
+                        sum += Digit_C11_Map_Weight[map_index_position] * pImage->imageData[image_index_position];
+                    }
+                }
+                c11_output[k * output_row * output_row + i * output_row + j] = TanhApproximateFunction(
+                        sum + Digit_C11_B_Weight[k]);
+//                printf("%ld\n",sum + C11_B_Weight[k]);
+            }
+        }
+//                printmat(pImage);
+//        printmat2(c11_output, 13, 13);
+//                printf("%f",sum);
+//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
+//        assert(NULL);
+    }
+
+
+    output_row = 6;
+    output_col = 6;
+    for (k = 0; k < model->model_all.C11.outChannels; k++) {
+//        for each filters
+        for (i = 0; i < output_row; i++) {
+            //        i represents start point in row
+            for (j = 0; j < output_col; j++) {
+                //        j represents start point in col
+                max = -10;
+                for (row = 0; row < 2; row++) {
+                    for (col = 0; col < 2; col++) {
+                        value = c11_output[k * 13 * 13 + (2 * i + row) * 13 + (2 * j + col)];
+                        if (value > max) {
+                            max = value;
+                        }
+
+                    }
+                }
+                merge_output[k * 6 * 6 + i * 6 + j] = max;
+            }
+        }
+//        printmat2(merge_output, 6, 6);
+//                printf("%f",sum);
+//                printf("%f",c11_output[k * 13 * 13 + i * 13 + j]);
+//        assert(NULL);
+    }
+    //endregion
+
+    //region FC1 - 360*40
+
+    for (row = 0; row < model->model_all.FC1.outputNum; row++) {
+        sum = 0;
+        for (col = 0; col < model->model_all.FC1.inputNum; col++) {
+            sum += merge_output[col] * Digit_FC1_Map_Weight[row * model->model_all.FC1.inputNum + col];
+        }
+//        fc1_output[row] = tanhf(sum + FC1_B_Weight[row]);
+        fc1_output[row] = TanhApproximateFunction(sum + Digit_FC1_B_Weight[row]);
+//        fc1_output[row] = sum + FC1_B_Weight[row];
+    }
+    //endregion
+
+    //region FC2 - 40*34
+    max = -1000000;
+    k = 0;
+    for (row = 0; row < model->model_all.FC2.outputNum; row++) {
+        sum = 0;
+        for (col = 0; col < model->model_all.FC2.inputNum; col++) {
+//            printf("%d,%d\n",fc1_output[col],FC2_Map_Weight[row * model->model_all.FC2.inputNum + col]);
+            sum += fc1_output[col] * Digit_FC2_Map_Weight[row * model->model_all.FC2.inputNum + col];
+        }
+        value = sum + Digit_FC2_B_Weight[row];
+//        printf("%d\n",value);
+        if (value > max) {
+            max = value;
+            k = row;
+        }
+    }
+    //endregion
+
+    // region 使用局部灰度值来二分类
+#if MODEL_MODE > 2
+//    8-3：区域 [1:14,1:6]， 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == '8' || index_to_char[k] == '3')
+        if (LocalRegionGrayValuePredict83(pImage) == '8')
+            k = 8;//8
+        else
+            k = 3;//3
+
+//    6-5：区域 [6:14,1:7]， 对区域进行二值化， 并判断是否有环
+    if (index_to_char[k] == '6' || index_to_char[k] == '5')
+        if (LocalRegionGrayValue6redict65(pImage) == '6')
+            k = 6;//6
+        else
+            k = 5;//5
+#endif
+    // endregion
+
+    return index_to_char[k];
 }

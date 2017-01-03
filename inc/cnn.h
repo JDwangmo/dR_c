@@ -114,6 +114,9 @@ typedef struct {
 } DigitCNNClassifier;
 
 
+int get_best_threshold(const UINT *count_of_gray);
+
+
 //CNN model init
 void CNNModelInit(CharCNNClassifier *model);
 void LetterCNNModelInit(LetterCNNClassifier *model);
@@ -133,8 +136,16 @@ CHAR CNNModelPredictBinary8B(CharCNNClassifier *model, IplImage *pImage);
 
 CHAR CNNModelPredictBinary0DQ(CharCNNClassifier *model, IplImage *pImage) ;
 
+CHAR LocalRegionGrayValuePredictZ7(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictEF(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictRP(IplImage *pImage);
+CHAR LocalRegionGrayValuePredict83(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictTI(IplImage *pImage);
+CHAR LocalRegionGrayValuePredictTJ(IplImage *pImage);
+
+CHAR LocalRegionGrayValuePredict0C(IplImage *pImage);
+CHAR LocalRegionGrayValuePredictPF(IplImage *pImage);
+CHAR LocalRegionGrayValue6redict6E(IplImage *pImage);
+CHAR LocalRegionGrayValue6redict65(IplImage *pImage);
 
 #endif

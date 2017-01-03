@@ -16,6 +16,8 @@
 // 设为0时，关闭debug功能
 #define DEBUG_LEVEL 1
 
+//1 - CNN总体，2 - CNN总体+CNN二分类，3 - CNN总体+CNN二分类 + 局部灰度值二分类
+#define MODEL_MODE 1
 
 
 
