@@ -1,7 +1,7 @@
 /**************************************************************
-* Created by jdwang on 2016-09-15.
-* Last updated on 2016-12-19
-* DESCRIPTION :
+ * Created by jdwang on 2016-09-15.
+ * Last updated on 2017-01-03
+ * DESCRIPTION :
  *              （1） CNN综合分类器
  *              （2） CNN二分类分类器
  *              （3） 局部灰度值二分类
@@ -465,7 +465,8 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
 ////        assert(NULL);
 //    }
 //    //endregion
-//
+
+    // region 丢弃
 //    //region 7*7 convolution
 //    //    output size
 ////    7*7
@@ -623,6 +624,12 @@ CHAR CNNModelPredict(CharCNNClassifier *model, IplImage *pImage) {
             k = 8;//8
         else
             k = 3;//3
+//    8-6：区域 [1:8,8:14]， 对区域进行二值化， 并判断是否有环，单向 8 修正为 6
+    if (index_to_char[k] == '8')
+        if (LocalRegionGrayValuePredict86(pImage) == '8')
+            k = 8;//8
+        else
+            k = 6;//6
 //    0-C：区域 [1:14,9:14], 对区域进行二值化， 并判断是否有环 --- 这里是单向的，只对预测成 C 修正，预测成0的不修正
     if (index_to_char[k] == 'C')
         if (LocalRegionGrayValuePredict0C(pImage) == '0')
@@ -930,6 +937,64 @@ CHAR LocalRegionGrayValuePredict83(IplImage *pImage) {
     if (is_white == 0)
 //        非环
         return '3';
+    else
+        return '8';
+}
+
+//    8-6：区域 [1:8,8:14]， 对区域进行二值化， 并判断是否有环，单向 8 修正为 6
+CHAR LocalRegionGrayValuePredict86(IplImage *pImage) {
+    INT32U row, col, locate_value, sum_value = 0;
+    INT32U is_white = 0, white_to_black = 0;
+
+    //    区域 [1:8,8:14]
+    UINT count_of_gray[256] = {0};
+    int best_threshold;
+
+    for (row = 1; row < 8; row++) {
+        for (col = 8; col < 14; col++) {
+            // get the pixel,
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+            count_of_gray[locate_value] += 1;
+
+        }
+    }
+    //    寻找 最优 二值化 阈值
+    best_threshold = get_best_threshold(count_of_gray);
+
+    for (row = 1; row < 8; row++) {
+//        计算这一行 二值化后 灰度值大小
+        sum_value = 0;
+        for (col = 8; col < 14; col++) {
+            // get the pixel
+            locate_value = pImage->imageData[row * pImage->widthStep + col];
+//            二值化,背景是黑色（0），前景是白色（1）
+            if (locate_value <= best_threshold)
+                locate_value = 1;
+            else
+                locate_value = 0;
+
+            sum_value += locate_value;
+        }
+
+        if (white_to_black == 1 && sum_value > 0) {
+            //        非环
+            return '6';
+        }
+
+        if (is_white == 1 && sum_value == 0) {
+//            白转黑
+            white_to_black = 1;
+        }
+
+
+        if (sum_value > 0)
+            is_white = 1;
+
+    }
+
+    if (is_white == 0)
+//        非环
+        return '6';
     else
         return '8';
 }
@@ -2212,6 +2277,13 @@ CHAR DigitCNNModelPredict(DigitCNNClassifier *model, IplImage *pImage) {
             k = 8;//8
         else
             k = 3;//3
+
+//    8-6：区域 [1:8,8:14]， 对区域进行二值化， 并判断是否有环，单向 8 修正为 6
+    if (index_to_char[k] == '8')
+        if (LocalRegionGrayValuePredict86(pImage) == '8')
+            k = 8;//8
+        else
+            k = 6;//6
 
 //    6-5：区域 [6:14,1:7]， 对区域进行二值化， 并判断是否有环
     if (index_to_char[k] == '6' || index_to_char[k] == '5')

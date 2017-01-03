@@ -140,6 +140,7 @@ CHAR LocalRegionGrayValuePredictZ7(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictEF(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictRP(IplImage *pImage);
 CHAR LocalRegionGrayValuePredict83(IplImage *pImage);
+CHAR LocalRegionGrayValuePredict86(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictTI(IplImage *pImage);
 CHAR LocalRegionGrayValuePredictTJ(IplImage *pImage);
 
