@@ -12,8 +12,8 @@
 // ******** 参数设置 ***********
 //0-merge,1-digit,2-letter
 #define TEST_TYPE 0
-//0-test, 1-other, 2-other-new, 3-test20170103
-#define DATA_TYPE 0
+//0-test, 1-other, 2-other-new, 3-test20170103, 4-train_test20170218data
+#define DATA_TYPE 4
 
 
 char Index_To_Char[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
@@ -46,6 +46,9 @@ int main() {
 #elif DATA_TYPE == 3
     images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_test20170103_data.mat";
     labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_test20170103_data.mat";
+#elif DATA_TYPE == 4
+    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_train_test20170218data.mat";
+    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_train_test20170218data.mat";
 #endif
     image_array = ReadImageFromFile(images_file_name);
     label_array = ReadLabelFromFile(labels_file_name);
@@ -65,7 +68,7 @@ int main() {
         y_pred = RecognizeSCAU(&image_array.imageList[image_index], 0, flag);
 
 #if DEBUG_LEVEL > 0
-        if(y_pred != Index_To_Char[label_array[image_index]])
+//        if(y_pred != Index_To_Char[label_array[image_index]])
         printf("The %d's image: %c(Predict),%c(Real),True:%d \n", image_index,
                y_pred,
                Index_To_Char[label_array[image_index]],
