@@ -1,6 +1,6 @@
 /************************************************************************
  * Created by jdwang on 2016-09-15.
- * Last updated on 2017-01-03
+ * Last updated on 2017-03-08
  * DESCRIPTION : 主函数, 测试字符识别器，为了测试所有，可以直接调用 recognizer.c
 ************************************************************************/
 
@@ -11,8 +11,9 @@
 #include "sys/time.h"
 // ******** 参数设置 ***********
 //0-merge,1-digit,2-letter
-#define TEST_TYPE 0
-//0-test, 1-other, 2-other-new, 3-test20170103, 4-train_test20170218data
+#define TEST_TYPE 2
+
+//0-test, 1-other, 2-other-new, 3-test20170103, 4-test20170218data
 #define DATA_TYPE 4
 
 
@@ -47,15 +48,15 @@ int main() {
     images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_test20170103_data.mat";
     labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_test20170103_data.mat";
 #elif DATA_TYPE == 4
-    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_train_test20170218data.mat";
-    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_train_test20170218data.mat";
+    images_file_name = "/home/jdwang/ClionProjects/dR_c/data/images_test20170218data.mat";
+    labels_file_name = "/home/jdwang/ClionProjects/dR_c/data/labels_test20170218data.mat";
 #endif
     image_array = ReadImageFromFile(images_file_name);
     label_array = ReadLabelFromFile(labels_file_name);
     gettimeofday(&start, 0);
 
     for (image_index = 0; image_index < image_array.number_of_image; image_index++) {
-//        image_index = 221391;
+//        image_index = 91786;
 //        printmat(&image_array.imageList[image_index]);
 #if TEST_TYPE == 2
         if (label_array[image_index] < 10 && label_array[image_index] > 0)continue;

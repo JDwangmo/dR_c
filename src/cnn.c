@@ -13,7 +13,6 @@
 // ***************** CNN model init -- merge ***********************
 void CNNModelInit(CharCNNClassifier *model) {
 
-
     //region 34分类
     //    1's layer - input layer : 15*15
     model->init = 1;
@@ -1760,7 +1759,7 @@ CHAR LetterCNNModelPredict(LetterCNNClassifier *model, IplImage *pImage) {
 
     // region 使用局部灰度值来二分类
 #if MODEL_MODE > 2
-//  R-P:  对区域 [8:14,8:14] 求灰度和, 临界值：1953
+    //  R-P:  对区域 [8:14,8:14] 求灰度和, 临界值：1953
     if (index_to_char[k] == 'R' || index_to_char[k] == 'P')
         if (LocalRegionGrayValuePredictRP(pImage) == 'R')
             k = 17;
@@ -2271,7 +2270,7 @@ CHAR DigitCNNModelPredict(DigitCNNClassifier *model, IplImage *pImage) {
 
     // region 使用局部灰度值来二分类
 #if MODEL_MODE > 2
-//    8-3：区域 [1:14,1:6]， 对区域进行二值化， 并判断是否有环
+    //    8-3：区域 [1:14,1:6]， 对区域进行二值化， 并判断是否有环
     if (index_to_char[k] == '8' || index_to_char[k] == '3')
         if (LocalRegionGrayValuePredict83(pImage) == '8')
             k = 8;//8

@@ -4,7 +4,8 @@ project(dR_c)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11")
 
 include_directories(inc)
-include_directories(model_weight)
+#include_directories(model_weight)
+include_directories(model_weight_BK_20170308)
 
 set(SOURCE_FILES
         src/main.c
